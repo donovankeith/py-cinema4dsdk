@@ -27,7 +27,7 @@ under the MIT License.
 
 ## New to the Cinema 4D plugin development?
 
-Take a look at the [`starters/`][starters/] folder, it contains plugin examples
-that are suited for very beginners. Knowing the Python language however
-is of advantage.
+Take a look at the [`starters/`](starters/) folder, it contains plugin
+examples that are suited for very beginners. Knowing the Python language
+however is of advantage.
 
