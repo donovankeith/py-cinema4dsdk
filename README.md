@@ -25,6 +25,14 @@ __License__
 The source code in this repository, if not otherwise noted, is licensed
 under the MIT License.
 
+## Recommended development tools
+
+For string and description resource identifiers (in `c4d_symbols.h` and
+description resource headerss), we use the [`c4ddev`][c4ddev] toolbelt
+to extract the symbols and load via JSON in the Python plugin.
+
+  [c4ddev]: https://github.com/nr-tools/c4ddev
+
 ## New to the Cinema 4D plugin development?
 
 Take a look at the [`starters/`](starters/) folder, it contains plugin
