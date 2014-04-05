@@ -21,9 +21,10 @@ r"""
     py-cinema4dsdk/starters/commands/create-cube.pyp
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    description: command to create a simple cube object and insert
-            it into the active Cinema 4D scene.
-    tags: simple command muchdoc
+    description: This plugin command creates a Cube object and places
+           it at the position of the selected object. If there is
+           no active object, it is placed at the world's origin.
+    tags: command simple muchdoc
     level: beginner
 """
 
@@ -43,12 +44,13 @@ class CreateCubeCommand(c4d.plugins.CommandData):
         r""" It is good practice to keep the registration tied
         to the class that will be registered. """
 
-        help_string = "Creates a cube in the active Cinema 4D scene."
+        help_string = 'C++ SDK Example Command Plugin: Creates a cube and ' \
+                      'assigns the matrix of the selected object to it.'
 
         return c4d.plugins.RegisterCommandPlugin(
                 PLUGIN_ID,                   # The Plugin ID, obviously
                 "starters/commands/Create Cube",  # The name of the plugin
-                0,                           # Flags, not necessary here
+                c4d.PLUGINFLAG_COMMAND_HOTKEY,    # Sort of options
                 None,                        # Icon, None here
                 help_string,                 # The help text for the command
                 self,                        # The plugin implementation
@@ -65,6 +67,23 @@ class CreateCubeCommand(c4d.plugins.CommandData):
         # the Plugin ID of the cube objectself.
         cube = c4d.BaseObject(c4d.Ocube)
 
+        # Next, we'll get the currently selected object (which is
+        # only when there is exactly one object selected).
+        active_object = doc.GetActiveObject()
+
+        # If we got one, we'll assign the global matrix of the
+        # object (global position, scale & rotation) to the cube.
+        if active_object:
+            # Get the global matrix.
+            mg = active_object.GetMg()
+
+            # And set it as the local matrix for the cube.
+            cube.SetMl(mg)
+        else:
+            # The default matrix for an object is the local
+            # origin, so we won't have to adjust that.
+            pass
+
         # Then we tell the document to start an undo-step (we want
         # that the user can undo the creation of the cube).
         doc.StartUndo()
@@ -76,8 +95,13 @@ class CreateCubeCommand(c4d.plugins.CommandData):
             # Insert the object into the document (aka scene).
             doc.InsertObject(cube)
 
+            # Tell the cube that it was just inserted into
+            # the document (some primitives, such as the sphere, creat
+            # a Phong Tag in this procedure).
+            cube.Message(c4d.MSG_MENUPREPARE)
+
             # Tell the document that the cube was just added and
-            # that should be included when undoingself.
+            # that should be included when undoing.
             doc.AddUndo(c4d.UNDOTYPE_NEW, cube)
         finally:
             # End the undo.
