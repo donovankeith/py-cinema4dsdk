@@ -2,6 +2,12 @@ The `restore-sub-dialog.pyp` example demonstrates how sub-dialogs of a main
 dialog can be managed easily in Python. It also demonstrates a few useful
 techniques that easen the life of a developer.
 
+_This demo plugin was developed to answer the question [Multiple SubDialog][link]
+on the PluginCafe._
+
+  [link]: (http://plugincafe.com/forum/forum_posts.asp?TID=10015&PID=38923#38923)
+
+
 ## Details
 
 A sub-dialog can refer to two distinct and yet not distinct things. There
