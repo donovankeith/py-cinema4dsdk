@@ -26,6 +26,7 @@ class MainDialog(c4d.gui.GeDialog):
     def Command(self, param, bc):
         if param == MY_COOL_BUTTON_THAT_OPENS_ANOTHER_DIALOG:
             self.sub_dialog.Open(c4d.DLG_TYPE_ASYNC, PLUGIN_ID, subid=1)
+        return True
 ```
 
 Now in `CommandData.RestoreLayout()`, the `sec_ref` parameter is a dictionary
