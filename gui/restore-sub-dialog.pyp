@@ -33,7 +33,7 @@ r"""
 
 import c4d
 
-PLUGIN_ID = 1000004 # Test ID
+PLUGIN_ID = 1031982
 
 class MainDialog(c4d.gui.GeDialog):
 
