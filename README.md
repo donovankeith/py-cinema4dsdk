@@ -88,5 +88,16 @@ __level__: The level someone requires to understand the example.
 __read-before__: The name of one or more files that should be read and
 understood before reading the current file.
 
+## Contributions are Welcome!
 
+Don't hesitate to fork this repository and add new stuff to it. GitHub allows
+you to make a request that we will merge your changes into the main repository,
+and so we will do! It would be nice if you'd stick to the File Headers information
+for each file as we plan to do something with this information.
+
+We prefer the MIT license, but if, for any special reasons, you want to put your
+contributed sources under a different license, we are fine with that as long as
+it does not contradict with other contents of the repository! The *copyright* is
+granted to the original author of the source file, so don't forget to add it to
+the file(s).
 
