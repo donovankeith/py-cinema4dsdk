@@ -23,11 +23,13 @@ r"""
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     description: This file demonstrates how to create a dialog that loads/saves custom
-        data into the document's container.
+        data into the document's container. It implements a basic task/to do list stored
+        with each document.
     tags: command gui
     level: medium
     seealso:
     links:
+        http://www.plugincafe.com/forum/forum_posts.asp?TID=9828
 """
 
 import c4d
@@ -40,7 +42,8 @@ PLUGIN_ID = 1032046
 ## Scene Info ##
 """IDs for text at the top of the dialog."""
 
-ID_DOC_NAME = 1000
+ID_DOC_INFO_GROUP = 1000
+ID_DOC_NAME = 1001
 
 
 ## Entries ##
@@ -75,6 +78,9 @@ ID_SUBTRACT = 2002
 
 class PersistentDataDialog(c4d.gui.GeDialog):
     def __init__(self):
+        #Persistent values to see if doc has changed.
+        self._last_doc = c4d.documents.GetActiveDocument()
+
         #Default Values
         self._default_entry = {
             'state': False,
@@ -90,13 +96,9 @@ class PersistentDataDialog(c4d.gui.GeDialog):
         #Title in the menu bar of the dialog
         self.SetTitle('Persistent Data Dialog')
 
-        #Retrieve and display the active document's name
-        active_doc = c4d.documents.GetActiveDocument()
-        active_doc_name = ""
-        if active_doc is not None and active_doc.IsAlive():
-            active_doc_name = active_doc.GetDocumentName()
-
-        self.AddStaticText(ID_DOC_NAME, flags=0, name="Active Document: "+active_doc_name)
+        self.GroupBegin(ID_DOC_INFO_GROUP, flags=c4d.BFH_CENTER)
+        self.AddDocumentInfo()
+        self.GroupEnd()
 
         #Dyanmic List of Elements Group
         self.ScrollGroupBegin(ID_SCROLL_GROUP, flags=c4d.BFH_LEFT|c4d.BFV_TOP|c4d.BFH_SCALEFIT|c4d.BFV_SCALEFIT,
@@ -113,9 +115,24 @@ class PersistentDataDialog(c4d.gui.GeDialog):
         self.GroupEnd()
         return True
 
+    def AddDocumentInfo(self, active_doc=None):
+        """Retrieves the name of active_doc and displays it in the dialog."""
+
+        if active_doc is None:
+            active_doc = c4d.documents.GetActiveDocument()
+
+        #Retrieve and display the active document's name
+        active_doc_name = ""
+        if (active_doc is not None) and active_doc.IsAlive():
+            active_doc_name = active_doc.GetDocumentName()
+
+        #Empty out the dialog and put in the active document's name.
+        self.LayoutFlushGroup(ID_DOC_INFO_GROUP)
+        self.AddStaticText(ID_DOC_NAME, flags=0, name="Active Document: "+active_doc_name)
+        self.LayoutChanged(ID_DOC_INFO_GROUP)
+
     def AddListToLayout(self):
-        """Adds an entry to the layout for each element in the classes _list. Be sure to Flush the group
-        before doing this. And update the layout after."""
+        """Adds an entry to the layout for each element in the classes _list."""
 
         self.LayoutFlushGroup(ID_DYNAMIC_LIST_GROUP)
         for i, row in enumerate(self._list):
@@ -123,6 +140,41 @@ class PersistentDataDialog(c4d.gui.GeDialog):
             self.AddCheckbox(current_line + ID_OFFSET_STATE, 0, initw=0, inith=0, name="")
             self.AddEditText(current_line + ID_OFFSET_NAME, flags=c4d.BFH_SCALEFIT, initw=0, inith=0)
         self.LayoutChanged(ID_DYNAMIC_LIST_GROUP)
+
+    def Refresh(self):
+        """Recalculates the _list and refreshes the dialog with the new information."""
+
+        def RefreshDialog():
+            """Convenience function to reduce duplication of code."""
+
+            self.AddDocumentInfo(active_doc=doc)
+            self.AddListToLayout()
+
+        #If there isn't a document, wipe the dialog and return
+        active_doc = c4d.documents.GetActiveDocument()
+        if (active_doc is None) or not active_doc.IsAlive():
+            self._last_doc = active_doc
+            self._list = [self._default_entry]
+            RefreshDialog()
+            return
+
+    def CoreMessage(self, id, msg):
+        """Responds to what's happening inside of Cinema 4D. In this case, we're looking to see
+        if we've got a new document."""
+
+        #We've got a new document, or the document is being recalculated
+        if id == c4d.EVMSG_DOCUMENTRECALCULATED:
+            doc = c4d.documents.GetActiveDocument()
+
+            #Are we in a different document?
+            if doc is not self._last_doc:
+                #Store the current document for comparison
+                self._last_doc = doc
+
+                #Refresh the dialogs
+                self.Refresh(active_doc = doc)
+
+        return True
 
     def Command(self, param, bc):
         #User is adding a row
