@@ -36,13 +36,10 @@ PLUGIN_ID = 1032046
 
 # GUI IDS #
 
-## Commands ##
-"""ID's for the various buttons/commands that affect the contents of the dialog. These numbers are
-intentionally lower than those of the dynamic entries to avoid potential ID conflicts/limits."""
+## TITLE
+"""IDs for text at the top of the dialog."""
 
-ID_COMMAND_GROUP = 1000
-ID_ADD = 1001
-ID_SUBTRACT = 1002
+ID_DOC_NAME = 1000
 
 ## Entries ##
 """Each line in the dialog/list gets an ID assigned to it like so:
@@ -54,10 +51,19 @@ Boolean State: 20000 + 3*10 + 1 = 20031
 String Name: 20000 + 3*10 + 2 = 20032
 """
 
-ID_DYNAMIC_LIST_GROUP = 20000 #Starting id for the dynamic list
+ID_DYNAMIC_LIST_GROUP = 30000 #Starting id for the dynamic list
 ID_OFFSET_LINE = 10 #Each entry can store up to 10 pieces of data
 ID_OFFSET_STATE = 1
 ID_OFFSET_NAME = 2
+
+## Commands ##
+"""ID's for the various buttons/commands that affect the contents of the dialog. These numbers are
+intentionally lower than those of the dynamic entries to avoid potential ID conflicts/limits."""
+
+ID_COMMAND_GROUP = 2000
+ID_ADD = 2001
+ID_SUBTRACT = 2002
+
 
 class PersistentDataDialog(c4d.gui.GeDialog):
 
