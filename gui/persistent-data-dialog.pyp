@@ -36,10 +36,11 @@ PLUGIN_ID = 1032046
 
 # GUI IDS #
 
-## TITLE
+## Scene Info ##
 """IDs for text at the top of the dialog."""
 
 ID_DOC_NAME = 1000
+
 
 ## Entries ##
 """Each line in the dialog/list gets an ID assigned to it like so:
@@ -55,6 +56,7 @@ ID_DYNAMIC_LIST_GROUP = 30000 #Starting id for the dynamic list
 ID_OFFSET_LINE = 10 #Each entry can store up to 10 pieces of data
 ID_OFFSET_STATE = 1
 ID_OFFSET_NAME = 2
+
 
 ## Commands ##
 """ID's for the various buttons/commands that affect the contents of the dialog. These numbers are
@@ -73,10 +75,18 @@ class PersistentDataDialog(c4d.gui.GeDialog):
         #Title in the menu bar of the dialog
         self.SetTitle('Persistent Data Dialog')
 
+        #Scene Info Elements
+        active_doc = c4d.documents.GetActiveDocument()
+        active_doc_name = ""
+        if active_doc is not None and active_doc.IsAlive():
+            active_doc_name = active_doc.GetDocumentName()
+
+        self.AddStaticText(ID_DOC_NAME, flags=0, name="Active Document: "+active_doc_name)
+
         #Dyanmic List of Elements Group
-        self.GroupBegin(ID_DYNAMIC_LIST_GROUP, c4d.BFH_LEFT|c4d.BFV_TOP, cols=0, rows=1)
+        self.GroupBegin(ID_DYNAMIC_LIST_GROUP, flags=c4d.BFH_LEFT|c4d.BFV_TOP|c4d.BFH_SCALEFIT, cols=0, rows=1)
         self.AddCheckbox(ID_DYNAMIC_LIST_GROUP + ID_OFFSET_STATE, 0, initw=0, inith=0, name="")
-        self.AddEditText(ID_DYNAMIC_LIST_GROUP + ID_OFFSET_NAME, 0, initw=300, inith=0)
+        self.AddEditText(ID_DYNAMIC_LIST_GROUP + ID_OFFSET_NAME, flags=c4d.BFH_SCALEFIT, initw=0, inith=0)
         self.GroupEnd()
 
         #Modify List Buttons
