@@ -37,14 +37,14 @@ import c4d
 #Unique plugin ID, get your own from PluginCafe.com\
 PLUGIN_ID = 1032046
 
-# GUI IDS #
+# GUI/CONTAINER IDS #
 
 ## Scene Info ##
 """IDs for text at the top of the dialog."""
+ID_LIST_LENGTH = 10
 
 ID_DOC_INFO_GROUP = 1000
 ID_DOC_NAME = 1001
-
 
 ## Entries ##
 """Each line in the dialog/list gets an ID assigned to it like so:
@@ -131,12 +131,15 @@ class PersistentDataDialog(c4d.gui.GeDialog):
         self.AddStaticText(ID_DOC_NAME, flags=0, name="Active Document: "+active_doc_name)
         self.LayoutChanged(ID_DOC_INFO_GROUP)
 
+    def CalcCurrentLine(self, i):
+        return ID_DYNAMIC_LIST_GROUP + i*ID_OFFSET_LINE
+
     def AddListToLayout(self):
         """Adds an entry to the layout for each element in the classes _list."""
 
         self.LayoutFlushGroup(ID_DYNAMIC_LIST_GROUP)
         for i, row in enumerate(self._list):
-            current_line = ID_DYNAMIC_LIST_GROUP + i*ID_OFFSET_LINE
+            current_line = self.CalcCurrentLine(i)
             self.AddCheckbox(current_line + ID_OFFSET_STATE, 0, initw=0, inith=0, name="")
             self.AddEditText(current_line + ID_OFFSET_NAME, flags=c4d.BFH_SCALEFIT, initw=0, inith=0)
         self.LayoutChanged(ID_DYNAMIC_LIST_GROUP)
@@ -147,7 +150,7 @@ class PersistentDataDialog(c4d.gui.GeDialog):
         def RefreshDialog():
             """Convenience function to reduce duplication of code."""
 
-            self.AddDocumentInfo(active_doc=doc)
+            self.AddDocumentInfo()
             self.AddListToLayout()
 
         #If there isn't a document, wipe the dialog and return
@@ -157,6 +160,69 @@ class PersistentDataDialog(c4d.gui.GeDialog):
             self._list = [self._default_entry]
             RefreshDialog()
             return
+
+        #Otherwise, try and build up the dialog from the data in the document.
+
+        #flush the data
+        self._list = []
+
+        doc_bc = active_doc.GetDataInstance()
+        if doc_bc is None:
+            return
+
+        #Retrieve this plugin's data stored in the document
+        list_bc = doc_bc.GetContainer(PLUGIN_ID)
+        if list_bc is None:
+            return
+
+        #Convert the contents of the container into a python list
+        list_length = list_bc.GetInt32(ID_LIST_LENGTH)
+
+        #Empty list, fill in with the defaults
+        if list_length == 0:
+            self._list = [self._default_entry]
+
+        #Pull the data from the container
+        for i in range(list_length):
+            current_line = self.CalcCurrentLine(i)
+            state = list_bc.GetBool(current_line + ID_OFFSET_STATE)
+            name = list_bc.GetString(current_line + ID_OFFSET_NAME)
+            self._list.append({'state': state,
+                                'name': name}
+            )
+
+        #We have the data we need, so refresh the dialog
+        RefreshDialog()
+
+    def ListToContainer(self):
+        #Get the current document's container
+        active_doc = c4d.documents.GetActiveDocument()
+        if (active_doc is None) or not active_doc.IsAlive():
+            return
+
+        doc_bc = active_doc.GetDataInstance()
+        if doc_bc is None:
+            return
+
+        #Get this plugin's sub-container
+        list_bc = doc_bc.GetContainer(PLUGIN_ID)
+
+        if list_bc is None:
+            list_bc = c4d.BaseContainer()
+
+        #Store the length of the list
+        list_length = len(self._list)
+        list_bc.SetInt32(ID_LIST_LENGTH, list_length)
+
+        #Update each of the list items
+        for i, line in enumerate(self._list):
+            current_line = self.CalcCurrentLine(i)
+            list_bc.SetBool(current_line + ID_OFFSET_STATE, line['state'])
+            list_bc.SetString(current_line + ID_OFFSET_NAME, line['name'])
+
+        #Save the container to the document
+        doc_bc.SetContainer(PLUGIN_ID, list_bc)
+
 
     def CoreMessage(self, id, msg):
         """Responds to what's happening inside of Cinema 4D. In this case, we're looking to see
@@ -172,7 +238,7 @@ class PersistentDataDialog(c4d.gui.GeDialog):
                 self._last_doc = doc
 
                 #Refresh the dialogs
-                self.Refresh(active_doc = doc)
+                self.Refresh()
 
         return True
 
@@ -180,6 +246,7 @@ class PersistentDataDialog(c4d.gui.GeDialog):
         #User is adding a row
         if param == ID_ADD:
             self._list.append(self._default_entry)
+            self.ListToContainer()
             self.AddListToLayout()
 
         #User is subtracting a row
@@ -190,6 +257,7 @@ class PersistentDataDialog(c4d.gui.GeDialog):
             #Unless there's only one item, in that case restore the default values.
             else:
                 self._list = [self._default_entry]
+            self.ListToContainer()
             self.AddListToLayout()
         return True
 
