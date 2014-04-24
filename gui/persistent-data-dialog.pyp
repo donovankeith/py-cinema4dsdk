@@ -101,8 +101,8 @@ class Command(c4d.plugins.CommandData):
     def Execute(self, doc):
         return self.dialog.Open(c4d.DLG_TYPE_ASYNC, PLUGIN_ID)
 
-    def RestoreLayout(self, secref):
-        return self.dialog.Restore(PLUGIN_ID, secref)
+    def RestoreLayout(self, secret):
+        return self.dialog.Restore(PLUGIN_ID, secret)
 
 if __name__ == '__main__':
     Command().Register()
