@@ -17,13 +17,14 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
+
 r"""
     py-cinema4dsdk/starters/commands/iter-hierarchy.pyp
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     description: This plugin command demonstrates how to recursively
-        iterate over a documents object hierarchy and print them to
-        the console.
+        iterate over a document's object hierarchy and print the objects'
+        names to the console.
     tags: command simple muchdoc hierarchy-iteration recursion console
     level: beginner
     read-before: create-cube.cpp group-objects.cpp
@@ -36,6 +37,8 @@ PLUGIN_ID = 1031978
 class IterHierarchyCommand(c4d.plugins.CommandData):
 
     def Register(self):
+        """Registers the plugin with Cinema 4D. Necessary to create a menu entry."""
+
         help_string = 'C++ SDK Example Command Plugin: Demonstrates ' \
                       'working through the object tree recursively and ' \
                       'printing the hierarchly structure to the console.'
@@ -49,9 +52,9 @@ class IterHierarchyCommand(c4d.plugins.CommandData):
                 self,
         )
 
-    # c4d.plugins.CommandData
-
     def Execute(self, doc):
+        """Prints a list of all objects to the console when the user run this command plugin."""
+
         # Get a list of all the objects on the top-level of the scene.
         objects = doc.GetObjects()
 
@@ -62,6 +65,8 @@ class IterHierarchyCommand(c4d.plugins.CommandData):
         return True
 
 def print_hierarchy(op, depth=0):
+    """Recursively prints the children of op to the console"""
+
     # Print to the console the indentation (as defined by the
     # recursion `depth`) and the name of the object.
     print '    ' * depth + op.GetName()
@@ -73,4 +78,3 @@ def print_hierarchy(op, depth=0):
 
 if __name__ == '__main__':
     IterHierarchyCommand().Register()
-
