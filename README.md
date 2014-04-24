@@ -26,6 +26,11 @@ to extract the symbols and load via JSON in the Python plugin.
 
   [c4ddev]: https://github.com/nr-tools/c4ddev
 
+If you're looking for a good IDE, [PyCharm Community Edition][pycharm] is free and
+provides seamless integration with GitHub.
+
+    [pycharm]: http://www.jetbrains.com/pycharm/download/
+
 ## New to the Cinema 4D plugin development?
 
 Take a look at the [`starters/`](starters/) folder, it contains plugin
@@ -90,10 +95,12 @@ understood before reading the current file.
 
 ## Contributions are Welcome!
 
-Don't hesitate to fork this repository and add new stuff to it. GitHub allows
+Don't hesitate to [fork this repository][fork] and add new stuff to it. GitHub allows
 you to make a request that we will merge your changes into the main repository,
 and so we will do! It would be nice if you'd stick to the File Headers information
 for each file as we plan to do something with this information.
+
+    [fork]: https://help.github.com/articles/fork-a-repo
 
 We prefer the MIT license, but if, for any special reasons, you want to put your
 contributed sources under a different license, we are fine with that as long as
