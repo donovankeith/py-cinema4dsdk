@@ -22,9 +22,9 @@ r"""
     py-cinema4dsdk/gui/persistent-data-dialog.pyp
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    description: This file demonstrates how to create a dialog that loads/saves custom
-        data into the document's container. It implements a basic task/to do list stored
-        with each document.
+    description: This ToDo List plugin demonstrates two common issues when working with a dialog:
+        1. Creating and updating a dynamic dialog.
+        2. Saving the dialog's data with the active document.
     tags: command gui
     level: medium
     seealso:
@@ -47,8 +47,8 @@ ID_DOC_INFO_GROUP = 1000
 ID_DOC_NAME = 1001
 
 ## Entries ##
-"""Each line in the dialog/list gets an ID assigned to it like so:
-ID_DYNAMIC_LIST_GROUP + i*ID_OFFSET_LINE + ID_OFFSET_STATE/NAME/????
+"""Each task in the dialog/list gets an ID assigned to it like so:
+ID_DYNAMIC_LIST_GROUP + i*ID_OFFSET_TASK + ID_OFFSET_COMPLE/NAME/????
 
 So the ids for the 3rd list entry would be
 
@@ -62,9 +62,9 @@ ID_SCROLL_GROUP = 20000
 ID_DYNAMIC_LIST_GROUP = 30000
 
 #Each entry can store up to 10 pieces of data
-ID_OFFSET_LINE = 10
-ID_OFFSET_STATE = 1
-ID_OFFSET_NAME = 2
+ID_OFFSET_TASK = 10
+ID_OFFSET_COMPLETE = 1
+ID_OFFSET_TASK_NAME = 2
 
 
 ## Commands ##
@@ -77,18 +77,20 @@ ID_SUBTRACT = 2002
 
 
 class PersistentDataDialog(c4d.gui.GeDialog):
+    """Class which implements a simple ToDo list dialog and data construct."""
+
     def __init__(self):
         #Persistent values to see if doc has changed.
         self._last_doc = c4d.documents.GetActiveDocument()
 
         #Default Values
-        self._default_state = False
-        self._default_name = "Default"
+        self._default_complete = False
+        self._default_task_name = "Task"
 
         #List of Entries in Dialog
-        self._list = [{
-            'state': self._default_state,
-            'name': self._default_name
+        self._todo_list = [{
+            'complete': self._default_complete,
+            'name': self._default_task_name
         }]
 
     def CreateLayout(self):
@@ -129,27 +131,27 @@ class PersistentDataDialog(c4d.gui.GeDialog):
 
         #Empty out the dialog and put in the active document's name.
         self.LayoutFlushGroup(ID_DOC_INFO_GROUP)
-        self.AddStaticText(ID_DOC_NAME, flags=0, name="Active Document: "+active_doc_name)
+        self.AddStaticText(ID_DOC_NAME, flags=0, name="To Do in: "+active_doc_name)
         self.LayoutChanged(ID_DOC_INFO_GROUP)
 
-    def CalcCurrentLine(self, i):
-        return ID_DYNAMIC_LIST_GROUP + i*ID_OFFSET_LINE
+    def CalcCurrentTask(self, i):
+        return ID_DYNAMIC_LIST_GROUP + i*ID_OFFSET_TASK
 
     def AddListToLayout(self):
-        """Adds an entry to the layout for each element in the classes _list."""
+        """Adds an entry to the layout for each element in the classes _todo_list."""
 
         self.LayoutFlushGroup(ID_DYNAMIC_LIST_GROUP)
-        for i, row in enumerate(self._list):
-            current_line = self.CalcCurrentLine(i)
-            self.AddCheckbox(current_line + ID_OFFSET_STATE, 0, initw=0, inith=0, name="")
-            self.SetBool(current_line + ID_OFFSET_STATE, row['state'])
+        for i, row in enumerate(self._todo_list):
+            current_task = self.CalcCurrentTask(i)
+            self.AddCheckbox(current_task + ID_OFFSET_COMPLETE, 0, initw=0, inith=0, name="")
+            self.SetBool(current_task + ID_OFFSET_COMPLETE, row['complete'])
 
-            self.AddEditText(current_line + ID_OFFSET_NAME, flags=c4d.BFH_SCALEFIT, initw=0, inith=0)
-            self.SetString(current_line + ID_OFFSET_NAME, row['name'])
+            self.AddEditText(current_task + ID_OFFSET_TASK_NAME, flags=c4d.BFH_SCALEFIT, initw=0, inith=0)
+            self.SetString(current_task + ID_OFFSET_TASK_NAME, row['name'])
         self.LayoutChanged(ID_DYNAMIC_LIST_GROUP)
 
     def Refresh(self):
-        """Recalculates the _list and refreshes the dialog with the new information."""
+        """Recalculates the _todo_list and refreshes the dialog with the new information."""
 
         def RefreshDialog():
             """Convenience function to reduce duplication of code."""
@@ -161,9 +163,9 @@ class PersistentDataDialog(c4d.gui.GeDialog):
         active_doc = c4d.documents.GetActiveDocument()
         if (active_doc is None) or not active_doc.IsAlive():
             self._last_doc = active_doc
-            self._list = [{
-                'state': self._default_state,
-                'name': self._default_name
+            self._todo_list = [{
+                'complete': self._default_complete,
+                'name': self._default_task_name
             }]
             RefreshDialog()
             return
@@ -171,7 +173,7 @@ class PersistentDataDialog(c4d.gui.GeDialog):
         #Otherwise, try and build up the dialog from the data in the document.
 
         #flush the data
-        self._list = []
+        self._todo_list = []
 
         doc_bc = active_doc.GetDataInstance()
         if doc_bc is None:
@@ -187,17 +189,17 @@ class PersistentDataDialog(c4d.gui.GeDialog):
 
         #Empty list, fill in with the defaults
         if list_length == 0:
-            self._list = [{
-                'state': self._default_state,
-                'name': self._default_name
+            self._todo_list = [{
+                'complete': self._default_complete,
+                'name': self._default_task_name
             }]
 
         #Pull the data from the container
         for i in range(list_length):
-            current_line = self.CalcCurrentLine(i)
-            state = list_bc.GetBool(current_line + ID_OFFSET_STATE)
-            name = list_bc.GetString(current_line + ID_OFFSET_NAME)
-            self._list.append({'state': state,
+            current_task = self.CalcCurrentTask(i)
+            complete = list_bc.GetBool(current_task + ID_OFFSET_COMPLETE)
+            name = list_bc.GetString(current_task + ID_OFFSET_TASK_NAME)
+            self._todo_list.append({'complete': complete,
                                 'name': name}
             )
 
@@ -205,6 +207,9 @@ class PersistentDataDialog(c4d.gui.GeDialog):
         RefreshDialog()
 
     def ListToContainer(self):
+        """Takes the _todo_list member variable and converts it into a container which is then stuffed into the
+        active document's container."""
+
         #Get the current document's container
         active_doc = c4d.documents.GetActiveDocument()
         if (active_doc is None) or not active_doc.IsAlive():
@@ -221,14 +226,14 @@ class PersistentDataDialog(c4d.gui.GeDialog):
             list_bc = c4d.BaseContainer()
 
         #Store the length of the list
-        list_length = len(self._list)
+        list_length = len(self._todo_list)
         list_bc.SetInt32(ID_LIST_LENGTH, list_length)
 
         #Update each of the list items
-        for i, line in enumerate(self._list):
-            current_line = self.CalcCurrentLine(i)
-            list_bc.SetBool(current_line + ID_OFFSET_STATE, line['state'])
-            list_bc.SetString(current_line + ID_OFFSET_NAME, line['name'])
+        for i, task in enumerate(self._todo_list):
+            current_task = self.CalcCurrentTask(i)
+            list_bc.SetBool(current_task + ID_OFFSET_COMPLETE, task['complete'])
+            list_bc.SetString(current_task + ID_OFFSET_TASK_NAME, task['name'])
 
         #Save the container to the document
         doc_bc.SetContainer(PLUGIN_ID, list_bc)
@@ -253,12 +258,17 @@ class PersistentDataDialog(c4d.gui.GeDialog):
         return True
 
     def Command(self, param, bc):
+        """Responds to user mouse-clicks and data entry. Typically updates the python list, and then writes the
+        whole thing to the plugin's sub-container within the document's container. Perhaps inefficient because
+        more than needs to be is written, but for a simple dialog like this it shouldn't result in any
+        considerable slow-down."""
+
         #User is adding a row
         if param == ID_ADD:
-            self._list.append(
+            self._todo_list.append(
                 {
-                    'state': self._default_state,
-                    'name': self._default_name
+                    'complete': self._default_complete,
+                    'name': self._default_task_name
                 }
             )
             self.ListToContainer()
@@ -267,13 +277,13 @@ class PersistentDataDialog(c4d.gui.GeDialog):
         #User is subtracting a row
         elif param == ID_SUBTRACT:
             #Remove the last item from the list
-            if len(self._list) > 1:
-                self._list.pop()
+            if len(self._todo_list) > 1:
+                self._todo_list.pop()
             #Unless there's only one item, in that case restore the default values.
             else:
-                self._list = [{
-                    'state': self._default_state,
-                    'name': self._default_name
+                self._todo_list = [{
+                    'complete': self._default_complete,
+                    'name': self._default_task_name
                 }]
             self.ListToContainer()
             self.AddListToLayout()
@@ -281,14 +291,14 @@ class PersistentDataDialog(c4d.gui.GeDialog):
         #One of the dynamic list entries is being affected
         elif param > ID_DYNAMIC_LIST_GROUP:
 
-            #figure out which offset id it is within it's line so we can retrieve the right data type
-            line_number = int((param - ID_DYNAMIC_LIST_GROUP)/ID_OFFSET_LINE)
-            offset_id = param % ID_OFFSET_LINE
+            #figure out which offset id it is within it's task so we can retrieve the right data type
+            task_number = int((param - ID_DYNAMIC_LIST_GROUP)/ID_OFFSET_TASK)
+            offset_id = param % ID_OFFSET_TASK
 
-            if offset_id == ID_OFFSET_STATE:
-                self._list[line_number]['state'] = self.GetBool(param)
-            elif offset_id == ID_OFFSET_NAME:
-                self._list[line_number]['name'] = self.GetString(param)
+            if offset_id == ID_OFFSET_COMPLETE:
+                self._todo_list[task_number]['complete'] = self.GetBool(param)
+            elif offset_id == ID_OFFSET_TASK_NAME:
+                self._todo_list[task_number]['name'] = self.GetString(param)
 
             #Store the update in the document's container
             self.ListToContainer()
@@ -299,6 +309,7 @@ class PersistentDataDialog(c4d.gui.GeDialog):
         return super(PersistentDataDialog, self).Restore(pluginid, secret)
 
 class Command(c4d.plugins.CommandData):
+    """Registers the plugin with Cinema 4D and opens the dialog when the command is clicked by the user."""
 
     def Register(self):
         return c4d.plugins.RegisterCommandPlugin(
