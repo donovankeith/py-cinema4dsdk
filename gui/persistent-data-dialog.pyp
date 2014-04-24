@@ -82,13 +82,14 @@ class PersistentDataDialog(c4d.gui.GeDialog):
         self._last_doc = c4d.documents.GetActiveDocument()
 
         #Default Values
-        self._default_entry = {
-            'state': False,
-            'name': "Default"
-        }
+        self._default_state = False
+        self._default_name = "Default"
 
         #List of Entries in Dialog
-        self._list = [self._default_entry]
+        self._list = [{
+            'state': self._default_state,
+            'name': self._default_name
+        }]
 
     def CreateLayout(self):
         """Build the dialog's interface"""
@@ -141,7 +142,10 @@ class PersistentDataDialog(c4d.gui.GeDialog):
         for i, row in enumerate(self._list):
             current_line = self.CalcCurrentLine(i)
             self.AddCheckbox(current_line + ID_OFFSET_STATE, 0, initw=0, inith=0, name="")
+            self.SetBool(current_line + ID_OFFSET_STATE, row['state'])
+
             self.AddEditText(current_line + ID_OFFSET_NAME, flags=c4d.BFH_SCALEFIT, initw=0, inith=0)
+            self.SetString(current_line + ID_OFFSET_NAME, row['name'])
         self.LayoutChanged(ID_DYNAMIC_LIST_GROUP)
 
     def Refresh(self):
@@ -157,7 +161,10 @@ class PersistentDataDialog(c4d.gui.GeDialog):
         active_doc = c4d.documents.GetActiveDocument()
         if (active_doc is None) or not active_doc.IsAlive():
             self._last_doc = active_doc
-            self._list = [self._default_entry]
+            self._list = [{
+                'state': self._default_state,
+                'name': self._default_name
+            }]
             RefreshDialog()
             return
 
@@ -180,7 +187,10 @@ class PersistentDataDialog(c4d.gui.GeDialog):
 
         #Empty list, fill in with the defaults
         if list_length == 0:
-            self._list = [self._default_entry]
+            self._list = [{
+                'state': self._default_state,
+                'name': self._default_name
+            }]
 
         #Pull the data from the container
         for i in range(list_length):
@@ -245,20 +255,44 @@ class PersistentDataDialog(c4d.gui.GeDialog):
     def Command(self, param, bc):
         #User is adding a row
         if param == ID_ADD:
-            self._list.append(self._default_entry)
+            self._list.append(
+                {
+                    'state': self._default_state,
+                    'name': self._default_name
+                }
+            )
             self.ListToContainer()
             self.AddListToLayout()
 
         #User is subtracting a row
-        if param == ID_SUBTRACT:
+        elif param == ID_SUBTRACT:
             #Remove the last item from the list
             if len(self._list) > 1:
                 self._list.pop()
             #Unless there's only one item, in that case restore the default values.
             else:
-                self._list = [self._default_entry]
+                self._list = [{
+                    'state': self._default_state,
+                    'name': self._default_name
+                }]
             self.ListToContainer()
             self.AddListToLayout()
+
+        #One of the dynamic list entries is being affected
+        elif param > ID_DYNAMIC_LIST_GROUP:
+
+            #figure out which offset id it is within it's line so we can retrieve the right data type
+            line_number = int((param - ID_DYNAMIC_LIST_GROUP)/ID_OFFSET_LINE)
+            offset_id = param % ID_OFFSET_LINE
+
+            if offset_id == ID_OFFSET_STATE:
+                self._list[line_number]['state'] = self.GetBool(param)
+            elif offset_id == ID_OFFSET_NAME:
+                self._list[line_number]['name'] = self.GetString(param)
+
+            #Store the update in the document's container
+            self.ListToContainer()
+
         return True
 
     def Restore(self, pluginid, secret):
