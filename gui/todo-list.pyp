@@ -316,7 +316,9 @@ class TodoListDialog(c4d.gui.GeDialog):
         return super(TodoListDialog, self).Restore(pluginid, secret)
 
 class Command(c4d.plugins.CommandData):
-    """Registers the plugin with Cinema 4D and opens the dialog when the command is clicked by the user."""
+    r""" Implements the behavior of the Plugin Command and is being
+    registered to the application with :meth:`Register`. When invoked,
+    it opens the :class:`TodoListDialog` asynchronously. """
 
     def Register(self):
         return c4d.plugins.RegisterCommandPlugin(
