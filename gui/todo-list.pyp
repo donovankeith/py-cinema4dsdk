@@ -97,7 +97,7 @@ class TodoListDialog(c4d.gui.GeDialog):
         }]
 
     def AddDocumentInfo(self, active_doc=None):
-        """Retrieves the name of active_doc and displays it in the dialog."""
+        r""" Retrieves the name of active_doc and displays it in the dialog."""
 
         if active_doc is None:
             active_doc = c4d.documents.GetActiveDocument()
@@ -185,8 +185,9 @@ class TodoListDialog(c4d.gui.GeDialog):
         RefreshDialog()
 
     def ListToContainer(self):
-        """Takes the _todo_list member variable and converts it into a container which is then stuffed into the
-        active document's container."""
+        r""" Takes the _todo_list member variable and converts it into
+        a container which is then stuffed into the active document's
+        container. """
 
         #Get the current document's container
         active_doc = c4d.documents.GetActiveDocument()
@@ -219,56 +220,55 @@ class TodoListDialog(c4d.gui.GeDialog):
     # c4d.gui.GeDialog
 
     def CreateLayout(self):
-        """Build the dialog's interface"""
+        r""" This is called when the dialog should create its initial
+        interface. We create the basic layout and load the tasks that
+        have been stored in the active document. """
 
-        #Title in the menu bar of the dialog
         self.SetTitle('Todo List')
 
         self.GroupBegin(ID_DOC_INFO_GROUP, flags=c4d.BFH_CENTER)
         self.AddDocumentInfo()
         self.GroupEnd()
 
-        #Dyanmic List of Elements Group
+        # Dynanmic List of Elements Group
         self.ScrollGroupBegin(ID_SCROLL_GROUP, flags=c4d.BFH_LEFT|c4d.BFV_TOP|c4d.BFH_SCALEFIT|c4d.BFV_SCALEFIT,
                               scrollflags=c4d.SCROLLGROUP_VERT|c4d.SCROLLGROUP_AUTOVERT)
         self.GroupBegin(ID_DYNAMIC_LIST_GROUP, flags=c4d.BFH_LEFT|c4d.BFV_TOP|c4d.BFH_SCALEFIT, cols=2, rows=0)
 
-        #Call automation function to add menu entries for each task
+        # Call automation function to add menu entries for each task
         self.AddListToLayout()
 
         self.GroupEnd()
         self.GroupEnd()
 
-        #Modify List Buttons
+        # Modify List Buttons
         self.GroupBegin(ID_COMMAND_GROUP, c4d.BFH_CENTER|c4d.BFV_BOTTOM, cols=0, rows=1)
         self.AddButton(ID_ADD, 0, name="+")
         self.AddButton(ID_SUBTRACT, 0, name="-")
         self.GroupEnd()
         return True
 
-    def CoreMessage(self, id, msg):
-        """Responds to what's happening inside of Cinema 4D. In this case, we're looking to see
-        if we've got a new document."""
+    def CoreMessage(self, kind, msg):
+        r""" Responds to what's happening inside of Cinema 4D. In this
+        case, we're looking to see if the active document has changed. """
 
-        #We've got a new document, or the document is being recalculated
-        if id == c4d.EVMSG_DOCUMENTRECALCULATED:
+        # One case this message is being sent is when the active
+        # document has changed.
+        if kind == c4d.EVMSG_DOCUMENTRECALCULATED:
+            # Get the active document and compare it with the
+            # document we have stored. If they differ, the document
+            # has changed and we need to update our interface.
             doc = c4d.documents.GetActiveDocument()
-
-            #Are we in a different document?
-            if doc is not self._last_doc:
-                #Store the current document for comparison
+            if self._last_doc != doc:
                 self._last_doc = doc
-
-                #Refresh the dialogs
                 self.Refresh()
 
         return True
 
     def Command(self, param, bc):
-        """Responds to user mouse-clicks and data entry. Typically updates the python list, and then writes the
-        whole thing to the plugin's sub-container within the document's container. Perhaps inefficient because
-        more than needs to be is written, but for a simple dialog like this it shouldn't result in any
-        considerable slow-down."""
+        r""" This is called when the user clicks a button or types into
+        a text field. We use this to update the task list and save the
+        changed data into the document. """
 
         #User is adding a row
         if param == ID_ADD:
