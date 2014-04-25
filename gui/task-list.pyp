@@ -18,14 +18,17 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 r"""
-    py-cinema4dsdk/gui/todo-list.pyp
+    py-cinema4dsdk/gui/task-list.pyp
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    description: This ToDo List plugin demonstrates common issues when working with a dialog:
+    description:
+        This Tasklist plugin demonstrates common issues when
+        working with dialogs in Cinema 4D:
+
         1. Creating and updating a dynamic dialog.
         2. Saving the dialog's data within the active document.
         3. Refreshing the dialog when a new document is opened.
-    tags: command gui persistent-data async-dialog
+    tags: command gui persistent-data async-dialog bitmap-button
     level: medium
     links:
         http://www.plugincafe.com/forum/forum_posts.asp?TID=9828
@@ -37,7 +40,7 @@ import c4d
 PLUGIN_ID = 1032046
 
 # This structure will contain all of our resource symbols that we
-# use in the TodoListDialog. Prevents pollution of the global scope.
+# use in the TaskListDialog. Prevents pollution of the global scope.
 # We can use type() to create a new type from a dictionary which will
 # allow us to use attribute-access instead of bracket syntax.
 res = type('res', (), dict(
@@ -78,15 +81,15 @@ def IsSameNode(node_a, node_b):
         return False
     return node_a == node_b
 
-class TodoListDialog(c4d.gui.GeDialog):
-    r""" This class implements creating the layout for the Todo list
+class TaskListDialog(c4d.gui.GeDialog):
+    r""" This class implements creating the layout for the Task list
     and managing the user input as well as saving and loaded the
     persistent data. """
 
     DEFAULT_TASK_NAME = "Task"
 
     def __init__(self):
-        super(TodoListDialog, self).__init__()
+        super(TaskListDialog, self).__init__()
 
         # Keep track of the document that we used the last time we
         # updated the layout and values in the dialog.
@@ -224,7 +227,7 @@ class TodoListDialog(c4d.gui.GeDialog):
         have been stored in the active document. """
 
         self._last_doc = None
-        self.SetTitle('Todo List')
+        self.SetTitle('Task List')
 
         # Layout flag that will cause the widget to be scaled as much
         # possible in horizontal and vertical direction.
@@ -331,16 +334,16 @@ class TodoListDialog(c4d.gui.GeDialog):
 class Command(c4d.plugins.CommandData):
     r""" Implements the behavior of the Plugin Command and is being
     registered to the application with :meth:`Register`. When invoked,
-    it opens the :class:`TodoListDialog` asynchronously. """
+    it opens the :class:`TaskListDialog` asynchronously. """
 
     def Register(self):
         return c4d.plugins.RegisterCommandPlugin(
-                PLUGIN_ID, "Todo List", 0, None, "", self)
+                PLUGIN_ID, "Task List", 0, None, "", self)
 
     @property
     def dialog(self):
         if not hasattr(self, '_dialog'):
-            self._dialog = TodoListDialog()
+            self._dialog = TaskListDialog()
         return self._dialog
 
     # c4d.plugins.CommandData
