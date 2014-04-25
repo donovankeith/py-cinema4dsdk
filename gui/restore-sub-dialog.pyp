@@ -26,7 +26,6 @@ r"""
         in the layout.
     tags: command gui sub-dialogs layout-restore
     level: medium
-    seealso: restore-sub-dialog.md
     links:
         http://plugincafe.com/forum/forum_posts.asp?TID=10015&PID=38923#38923
 """

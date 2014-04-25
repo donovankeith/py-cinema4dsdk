@@ -79,9 +79,6 @@ Take the `src/starters/commands/group-objects.cpp` file for an instance:
  */
 ```
 
-__file__: The full path of the file in the Cinema4D SDK project relative
-to the projects main directory.
-
 __description__: A short description of the plugin. Some files might have
 an `*.md` file in the same directory with the same name which contains a
 more detailed description of the example.
@@ -92,6 +89,9 @@ __level__: The level someone requires to understand the example.
 
 __read-before__: The name of one or more files that should be read and
 understood before reading the current file.
+
+__links__: URLs that refer to the topic (eg. a link to a PluginCafe
+topic).
 
 ## Contributions are Welcome!
 

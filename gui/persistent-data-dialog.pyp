@@ -17,7 +17,6 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
-
 r"""
     py-cinema4dsdk/gui/persistent-data-dialog.pyp
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -28,7 +27,6 @@ r"""
         3. Refreshing the dialog when a new document is opened.
     tags: command gui
     level: medium
-    seealso:
     links:
         http://www.plugincafe.com/forum/forum_posts.asp?TID=9828
 """
