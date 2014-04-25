@@ -76,20 +76,24 @@ ID_SUBTRACT = 2002
 
 
 class TodoListDialog(c4d.gui.GeDialog):
-    """Class which implements a simple ToDo list dialog and data construct."""
+    r""" This class implements creating the layout for the Todo list
+    and managing the user input as well as saving and loaded the
+    persistent data. """
+
+    DEFAULT_TASK_NAME = "Task"
 
     def __init__(self):
-        #Persistent values to see if doc has changed.
+        super(TodoListDialog, self).__init__()
+
+        # Keep track of the document that we used the last time we
+        # updated the layout and values in the dialog.
         self._last_doc = c4d.documents.GetActiveDocument()
 
-        #Default Values
-        self._default_is_complete = False
-        self._default_task_name = "Task"
-
-        #List of Entries in Dialog
+        # A list of the task entries. An entry is a dictionary that
+        # has the two keys you can see below.
         self._todo_list = [{
-            'is_complete': self._default_is_complete,
-            'name': self._default_task_name
+            'is_complete': False,
+            'name': self.DEFAULT_TASK_NAME,
         }]
 
     def CreateLayout(self):
@@ -166,8 +170,8 @@ class TodoListDialog(c4d.gui.GeDialog):
         if (active_doc is None) or not active_doc.IsAlive():
             self._last_doc = active_doc
             self._todo_list = [{
-                'is_complete': self._default_is_complete,
-                'name': self._default_task_name
+                'is_complete': False,
+                'name': self.DEFAULT_TASK_NAME
             }]
             RefreshDialog()
             return
@@ -192,8 +196,8 @@ class TodoListDialog(c4d.gui.GeDialog):
         #Empty list, fill in with the defaults
         if list_length == 0:
             self._todo_list = [{
-                'is_complete': self._default_is_complete,
-                'name': self._default_task_name
+                'is_complete': False,
+                'name': self.DEFAULT_TASK_NAME
             }]
 
         #Pull the data from the container
@@ -269,8 +273,8 @@ class TodoListDialog(c4d.gui.GeDialog):
         if param == ID_ADD:
             self._todo_list.append(
                 {
-                    'is_complete': self._default_is_complete,
-                    'name': self._default_task_name
+                    'is_complete': False,
+                    'name': self.DEFAULT_TASK_NAME
                 }
             )
             self.ListToContainer()
@@ -284,8 +288,8 @@ class TodoListDialog(c4d.gui.GeDialog):
             #Unless there's only one item, in that case restore the default values.
             else:
                 self._todo_list = [{
-                    'is_complete': self._default_is_complete,
-                    'name': self._default_task_name
+                    'is_complete': False,
+                    'name': self.DEFAULT_TASK_NAME
                 }]
             self.ListToContainer()
             self.AddListToLayout()
