@@ -128,7 +128,7 @@ class TodoListDialog(c4d.gui.GeDialog):
         call to :meth:`Refresh` from :meth:`CreateLayout`. """
 
         if initial:
-            flush = True
+            flush = False
             reload_ = True
             self._last_doc = None
 
