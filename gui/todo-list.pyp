@@ -18,8 +18,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 r"""
-    py-cinema4dsdk/gui/persistent-data-dialog.pyp
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    py-cinema4dsdk/gui/todo-list.pyp
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     description: This ToDo List plugin demonstrates common issues when working with a dialog:
         1. Creating and updating a dynamic dialog.
@@ -33,7 +33,7 @@ r"""
 
 import c4d
 
-#Unique plugin ID, get your own from PluginCafe.com\
+# Unique plugin ID, get yours from http://plugincafe.com/forum/developer.asp
 PLUGIN_ID = 1032046
 
 # GUI/CONTAINER IDS #

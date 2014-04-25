@@ -1,4 +1,4 @@
-The `persistent-data-dialog.pyp` demonstrates:
+The `todo-list.pyp` demonstrates:
 
 1. How to create a dynamic dialog
 2. How to respond to retrieve user-input
