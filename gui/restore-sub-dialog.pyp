@@ -24,9 +24,8 @@ r"""
     description: This file demonstrates how to manage sub-dialogs
         of main dialog including the restoration of the sub-dialog
         in the layout.
-    tags: command gui sub-dialogs layout-restore
+    tags: command gui async-dialog sub-dialogs layout-restore
     level: medium
-    seealso: restore-sub-dialog.md
     links:
         http://plugincafe.com/forum/forum_posts.asp?TID=10015&PID=38923#38923
 """
@@ -98,8 +97,8 @@ class Command(c4d.plugins.CommandData):
     def Execute(self, doc):
         return self.dialog.Open(c4d.DLG_TYPE_ASYNC, PLUGIN_ID)
 
-    def RestoreLayout(self, secref):
-        return self.dialog.Restore(PLUGIN_ID, secref)
+    def RestoreLayout(self, secret):
+        return self.dialog.Restore(PLUGIN_ID, secret)
 
 if __name__ == '__main__':
     Command().Register()
