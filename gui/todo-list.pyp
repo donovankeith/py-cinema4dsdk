@@ -96,34 +96,6 @@ class TodoListDialog(c4d.gui.GeDialog):
             'name': self.DEFAULT_TASK_NAME,
         }]
 
-    def CreateLayout(self):
-        """Build the dialog's interface"""
-
-        #Title in the menu bar of the dialog
-        self.SetTitle('Todo List')
-
-        self.GroupBegin(ID_DOC_INFO_GROUP, flags=c4d.BFH_CENTER)
-        self.AddDocumentInfo()
-        self.GroupEnd()
-
-        #Dyanmic List of Elements Group
-        self.ScrollGroupBegin(ID_SCROLL_GROUP, flags=c4d.BFH_LEFT|c4d.BFV_TOP|c4d.BFH_SCALEFIT|c4d.BFV_SCALEFIT,
-                              scrollflags=c4d.SCROLLGROUP_VERT|c4d.SCROLLGROUP_AUTOVERT)
-        self.GroupBegin(ID_DYNAMIC_LIST_GROUP, flags=c4d.BFH_LEFT|c4d.BFV_TOP|c4d.BFH_SCALEFIT, cols=2, rows=0)
-
-        #Call automation function to add menu entries for each task
-        self.AddListToLayout()
-
-        self.GroupEnd()
-        self.GroupEnd()
-
-        #Modify List Buttons
-        self.GroupBegin(ID_COMMAND_GROUP, c4d.BFH_CENTER|c4d.BFV_BOTTOM, cols=0, rows=1)
-        self.AddButton(ID_ADD, 0, name="+")
-        self.AddButton(ID_SUBTRACT, 0, name="-")
-        self.GroupEnd()
-        return True
-
     def AddDocumentInfo(self, active_doc=None):
         """Retrieves the name of active_doc and displays it in the dialog."""
 
@@ -244,6 +216,35 @@ class TodoListDialog(c4d.gui.GeDialog):
         #Save the container to the document
         doc_bc.SetContainer(PLUGIN_ID, list_bc)
 
+    # c4d.gui.GeDialog
+
+    def CreateLayout(self):
+        """Build the dialog's interface"""
+
+        #Title in the menu bar of the dialog
+        self.SetTitle('Todo List')
+
+        self.GroupBegin(ID_DOC_INFO_GROUP, flags=c4d.BFH_CENTER)
+        self.AddDocumentInfo()
+        self.GroupEnd()
+
+        #Dyanmic List of Elements Group
+        self.ScrollGroupBegin(ID_SCROLL_GROUP, flags=c4d.BFH_LEFT|c4d.BFV_TOP|c4d.BFH_SCALEFIT|c4d.BFV_SCALEFIT,
+                              scrollflags=c4d.SCROLLGROUP_VERT|c4d.SCROLLGROUP_AUTOVERT)
+        self.GroupBegin(ID_DYNAMIC_LIST_GROUP, flags=c4d.BFH_LEFT|c4d.BFV_TOP|c4d.BFH_SCALEFIT, cols=2, rows=0)
+
+        #Call automation function to add menu entries for each task
+        self.AddListToLayout()
+
+        self.GroupEnd()
+        self.GroupEnd()
+
+        #Modify List Buttons
+        self.GroupBegin(ID_COMMAND_GROUP, c4d.BFH_CENTER|c4d.BFV_BOTTOM, cols=0, rows=1)
+        self.AddButton(ID_ADD, 0, name="+")
+        self.AddButton(ID_SUBTRACT, 0, name="-")
+        self.GroupEnd()
+        return True
 
     def CoreMessage(self, id, msg):
         """Responds to what's happening inside of Cinema 4D. In this case, we're looking to see
@@ -326,6 +327,8 @@ class Command(c4d.plugins.CommandData):
         if not hasattr(self, '_dialog'):
             self._dialog = TodoListDialog()
         return self._dialog
+
+    # c4d.plugins.CommandData
 
     def Execute(self, doc):
         return self.dialog.Open(c4d.DLG_TYPE_ASYNC, PLUGIN_ID)
