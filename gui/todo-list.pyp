@@ -59,9 +59,10 @@ res = type('res', (), dict(
     # in a c4d.BaseContainer.
     DYNAMIC_TASKS_START = 100000,
     TASKWIDGET_COUNT = 10,        # Number of widgets per row (incl. buffer)
-    TASKWIDGET_REALCOUNT = 2,     # The real number of widgets
+    TASKWIDGET_REALCOUNT = 3,     # The real number of widgets
     TASKWIDGET_OFFSET_STATE = 0,  # Checkbox
     TASKWIDGET_OFFSET_NAME = 1,   # Text Edit field
+    TASKWIDGET_OFFSET_REMOVE = 2, # Bitmap Button
 
 ))
 
@@ -156,12 +157,22 @@ class TodoListDialog(c4d.gui.GeDialog):
         if reload_:
             self.LoadTasks()
 
+        # Create the option container for the BitmapButtonCustomGui.
+        # We can re-use this for each bitmap button that we create.
+        bmpbutton = c4d.BaseContainer()
+        bmpbutton.SetBool(c4d.BITMAPBUTTON_BUTTON, True)
+        bmpbutton.SetString(c4d.BITMAPBUTTON_TOOLTIP, "Remove this Task")
+        bmpbutton.SetLong(c4d.BITMAPBUTTON_ICONID1, c4d.RESOURCEIMAGE_CLEARSELECTION)
+
         # Build the widgets for each task.
         for i, task in enumerate(self._task_list):
             base_id = self.ComputeTaskId(i)
 
             self.AddCheckbox(base_id + res.TASKWIDGET_OFFSET_STATE, 0, 0, 0, "")
             self.AddEditText(base_id + res.TASKWIDGET_OFFSET_NAME, c4d.BFH_SCALEFIT)
+            self.AddCustomGui(base_id + res.TASKWIDGET_OFFSET_REMOVE,
+                    c4d.CUSTOMGUI_BITMAPBUTTON, name="", flags=0, minw=0,
+                    minh=0, customdata=bmpbutton)
 
             self.SetBool(base_id + res.TASKWIDGET_OFFSET_STATE, task['done'])
             self.SetString(base_id + res.TASKWIDGET_OFFSET_NAME, task['name'])
@@ -283,14 +294,20 @@ class TodoListDialog(c4d.gui.GeDialog):
 
         # Or check if the user triggered one of the dynamic widgets.
         elif param >= res.DYNAMIC_TASKS_START:
+
             # Calculate the index of the task and the offset ID
             # of the widget that was triggered.
             delta = param - res.DYNAMIC_TASKS_START
             (task_index, widget_offset) = divmod(delta, res.TASKWIDGET_COUNT)
 
+            # Will be set when the triggered widget was handled.
+            # We will later save and/or refresh based on these
+            # values.
+            changed = False
+            refresh = False
+
             # Update the value of the adressed task depending on
             # which widget was triggered.
-            changed = False
             if task_index < len(self._task_list):
                 task = self._task_list[task_index]
                 if widget_offset == res.TASKWIDGET_OFFSET_STATE:
@@ -299,9 +316,15 @@ class TodoListDialog(c4d.gui.GeDialog):
                 elif widget_offset == res.TASKWIDGET_OFFSET_NAME:
                     task['name'] = self.GetString(param)
                     changed = True
+                elif widget_offset == res.TASKWIDGET_OFFSET_REMOVE:
+                    del self._task_list[task_index]
+                    changed = True
+                    refresh = True
 
             if changed:
                 self.SaveTasks()
+            if refresh:
+                self.Refresh(force=True)
 
         return True
 
