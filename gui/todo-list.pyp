@@ -312,9 +312,6 @@ class TodoListDialog(c4d.gui.GeDialog):
 
         return True
 
-    def Restore(self, pluginid, secret):
-        return super(TodoListDialog, self).Restore(pluginid, secret)
-
 class Command(c4d.plugins.CommandData):
     r""" Implements the behavior of the Plugin Command and is being
     registered to the application with :meth:`Register`. When invoked,
