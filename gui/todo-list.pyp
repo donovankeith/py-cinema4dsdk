@@ -285,7 +285,7 @@ class TodoListDialog(c4d.gui.GeDialog):
         elif param >= res.DYNAMIC_TASKS_START:
             # Calculate the index of the task and the offset ID
             # of the widget that was triggered.
-            delta = res.DYNAMIC_TASKS_START - param
+            delta = param - res.DYNAMIC_TASKS_START
             (task_index, widget_offset) = divmod(delta, res.TASKWIDGET_COUNT)
 
             # Update the value of the adressed task depending on
