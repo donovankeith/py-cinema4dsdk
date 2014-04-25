@@ -22,9 +22,10 @@ r"""
     py-cinema4dsdk/gui/persistent-data-dialog.pyp
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    description: This ToDo List plugin demonstrates two common issues when working with a dialog:
+    description: This ToDo List plugin demonstrates common issues when working with a dialog:
         1. Creating and updating a dynamic dialog.
-        2. Saving the dialog's data with the active document.
+        2. Saving the dialog's data within the active document.
+        3. Refreshing the dialog when a new document is opened.
     tags: command gui
     level: medium
     seealso:
@@ -48,7 +49,7 @@ ID_DOC_NAME = 1001
 
 ## Entries ##
 """Each task in the dialog/list gets an ID assigned to it like so:
-ID_DYNAMIC_LIST_GROUP + i*ID_OFFSET_TASK + ID_OFFSET_COMPLE/NAME/????
+ID_DYNAMIC_LIST_GROUP + i*ID_OFFSET_TASK + ID_OFFSET_NAME/IS_COMPLETE/????
 
 So the ids for the 3rd list entry would be
 
@@ -58,12 +59,12 @@ String Name: 20000 + 3*10 + 2 = 20032
 
 ID_SCROLL_GROUP = 20000
 
-#Starting id for the dynamic list
+#Starting id for the dynamic list, note that it's a # larger than all others
 ID_DYNAMIC_LIST_GROUP = 30000
 
 #Each entry can store up to 10 pieces of data
 ID_OFFSET_TASK = 10
-ID_OFFSET_COMPLETE = 1
+ID_OFFSET_IS_COMPLETE = 1
 ID_OFFSET_TASK_NAME = 2
 
 
@@ -84,12 +85,12 @@ class PersistentDataDialog(c4d.gui.GeDialog):
         self._last_doc = c4d.documents.GetActiveDocument()
 
         #Default Values
-        self._default_complete = False
+        self._default_is_complete = False
         self._default_task_name = "Task"
 
         #List of Entries in Dialog
         self._todo_list = [{
-            'complete': self._default_complete,
+            'is_complete': self._default_is_complete,
             'name': self._default_task_name
         }]
 
@@ -107,7 +108,10 @@ class PersistentDataDialog(c4d.gui.GeDialog):
         self.ScrollGroupBegin(ID_SCROLL_GROUP, flags=c4d.BFH_LEFT|c4d.BFV_TOP|c4d.BFH_SCALEFIT|c4d.BFV_SCALEFIT,
                               scrollflags=c4d.SCROLLGROUP_VERT|c4d.SCROLLGROUP_AUTOVERT)
         self.GroupBegin(ID_DYNAMIC_LIST_GROUP, flags=c4d.BFH_LEFT|c4d.BFV_TOP|c4d.BFH_SCALEFIT, cols=2, rows=0)
+
+        #Call automation function to add menu entries for each task
         self.AddListToLayout()
+
         self.GroupEnd()
         self.GroupEnd()
 
@@ -143,8 +147,8 @@ class PersistentDataDialog(c4d.gui.GeDialog):
         self.LayoutFlushGroup(ID_DYNAMIC_LIST_GROUP)
         for i, row in enumerate(self._todo_list):
             current_task = self.CalcCurrentTask(i)
-            self.AddCheckbox(current_task + ID_OFFSET_COMPLETE, 0, initw=0, inith=0, name="")
-            self.SetBool(current_task + ID_OFFSET_COMPLETE, row['complete'])
+            self.AddCheckbox(current_task + ID_OFFSET_IS_COMPLETE, 0, initw=0, inith=0, name="")
+            self.SetBool(current_task + ID_OFFSET_IS_COMPLETE, row['is_complete'])
 
             self.AddEditText(current_task + ID_OFFSET_TASK_NAME, flags=c4d.BFH_SCALEFIT, initw=0, inith=0)
             self.SetString(current_task + ID_OFFSET_TASK_NAME, row['name'])
@@ -164,7 +168,7 @@ class PersistentDataDialog(c4d.gui.GeDialog):
         if (active_doc is None) or not active_doc.IsAlive():
             self._last_doc = active_doc
             self._todo_list = [{
-                'complete': self._default_complete,
+                'is_complete': self._default_is_complete,
                 'name': self._default_task_name
             }]
             RefreshDialog()
@@ -190,16 +194,16 @@ class PersistentDataDialog(c4d.gui.GeDialog):
         #Empty list, fill in with the defaults
         if list_length == 0:
             self._todo_list = [{
-                'complete': self._default_complete,
+                'is_complete': self._default_is_complete,
                 'name': self._default_task_name
             }]
 
         #Pull the data from the container
         for i in range(list_length):
             current_task = self.CalcCurrentTask(i)
-            complete = list_bc.GetBool(current_task + ID_OFFSET_COMPLETE)
+            is_complete = list_bc.GetBool(current_task + ID_OFFSET_IS_COMPLETE)
             name = list_bc.GetString(current_task + ID_OFFSET_TASK_NAME)
-            self._todo_list.append({'complete': complete,
+            self._todo_list.append({'is_complete': is_complete,
                                 'name': name}
             )
 
@@ -232,7 +236,7 @@ class PersistentDataDialog(c4d.gui.GeDialog):
         #Update each of the list items
         for i, task in enumerate(self._todo_list):
             current_task = self.CalcCurrentTask(i)
-            list_bc.SetBool(current_task + ID_OFFSET_COMPLETE, task['complete'])
+            list_bc.SetBool(current_task + ID_OFFSET_IS_COMPLETE, task['is_complete'])
             list_bc.SetString(current_task + ID_OFFSET_TASK_NAME, task['name'])
 
         #Save the container to the document
@@ -267,7 +271,7 @@ class PersistentDataDialog(c4d.gui.GeDialog):
         if param == ID_ADD:
             self._todo_list.append(
                 {
-                    'complete': self._default_complete,
+                    'is_complete': self._default_is_complete,
                     'name': self._default_task_name
                 }
             )
@@ -282,7 +286,7 @@ class PersistentDataDialog(c4d.gui.GeDialog):
             #Unless there's only one item, in that case restore the default values.
             else:
                 self._todo_list = [{
-                    'complete': self._default_complete,
+                    'is_complete': self._default_is_complete,
                     'name': self._default_task_name
                 }]
             self.ListToContainer()
@@ -295,8 +299,8 @@ class PersistentDataDialog(c4d.gui.GeDialog):
             task_number = int((param - ID_DYNAMIC_LIST_GROUP)/ID_OFFSET_TASK)
             offset_id = param % ID_OFFSET_TASK
 
-            if offset_id == ID_OFFSET_COMPLETE:
-                self._todo_list[task_number]['complete'] = self.GetBool(param)
+            if offset_id == ID_OFFSET_IS_COMPLETE:
+                self._todo_list[task_number]['is_complete'] = self.GetBool(param)
             elif offset_id == ID_OFFSET_TASK_NAME:
                 self._todo_list[task_number]['name'] = self.GetString(param)
 
@@ -329,4 +333,3 @@ class Command(c4d.plugins.CommandData):
 
 if __name__ == '__main__':
     Command().Register()
-
