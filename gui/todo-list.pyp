@@ -75,7 +75,7 @@ ID_ADD = 2001
 ID_SUBTRACT = 2002
 
 
-class PersistentDataDialog(c4d.gui.GeDialog):
+class TodoListDialog(c4d.gui.GeDialog):
     """Class which implements a simple ToDo list dialog and data construct."""
 
     def __init__(self):
@@ -96,7 +96,7 @@ class PersistentDataDialog(c4d.gui.GeDialog):
         """Build the dialog's interface"""
 
         #Title in the menu bar of the dialog
-        self.SetTitle('Persistent Data Dialog')
+        self.SetTitle('Todo List')
 
         self.GroupBegin(ID_DOC_INFO_GROUP, flags=c4d.BFH_CENTER)
         self.AddDocumentInfo()
@@ -308,19 +308,19 @@ class PersistentDataDialog(c4d.gui.GeDialog):
         return True
 
     def Restore(self, pluginid, secret):
-        return super(PersistentDataDialog, self).Restore(pluginid, secret)
+        return super(TodoListDialog, self).Restore(pluginid, secret)
 
 class Command(c4d.plugins.CommandData):
     """Registers the plugin with Cinema 4D and opens the dialog when the command is clicked by the user."""
 
     def Register(self):
         return c4d.plugins.RegisterCommandPlugin(
-                PLUGIN_ID, "Persistent Data Dialog", 0, None, "", self)
+                PLUGIN_ID, "Todo List", 0, None, "", self)
 
     @property
     def dialog(self):
         if not hasattr(self, '_dialog'):
-            self._dialog = PersistentDataDialog()
+            self._dialog = TodoListDialog()
         return self._dialog
 
     def Execute(self, doc):
