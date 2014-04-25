@@ -249,13 +249,16 @@ class PersistentDataDialog(c4d.gui.GeDialog):
         if id == c4d.EVMSG_DOCUMENTRECALCULATED:
             doc = c4d.documents.GetActiveDocument()
 
-            #Are we in a different document?
-            if doc is not self._last_doc:
-                #Store the current document for comparison
+            #Is there a living active document?
+            if (doc is not None) and doc.IsAlive():
+                #How about a living cached document?
+                if (self._last_doc is not None) and self._last_doc.IsAlive():
+                    #Are we in a different document?
+                    if doc != self._last_doc:
+                        #Great, update the dialog
+                        self.Refresh()
+                #Cache the active document for later comparison
                 self._last_doc = doc
-
-                #Refresh the dialogs
-                self.Refresh()
 
         return True
 
