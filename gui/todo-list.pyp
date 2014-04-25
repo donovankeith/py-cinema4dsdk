@@ -36,44 +36,46 @@ import c4d
 # Unique plugin ID, get yours from http://plugincafe.com/forum/developer.asp
 PLUGIN_ID = 1032046
 
-# GUI/CONTAINER IDS #
+# This structure will contain all of our resource symbols that we
+# use in the TodoListDialog. Prevents pollution of the global scope.
+# We can use type() to create a new type from a dictionary which will
+# allow us to use attribute-access instead of bracket syntax.
+res = type('res', (), dict(
+    # ID of the text that displays the active document's name.
+    TEXT_DOCINFO = 1001,
 
-## Scene Info ##
-"""IDs for text at the top of the dialog."""
-ID_LIST_LENGTH = 10
+    # ID of the button to add a new task.
+    BUTTON_NEWTASK = 3000,
 
-ID_DOC_INFO_GROUP = 1000
-ID_DOC_NAME = 1001
+    # This is the ID for the group that contains the task widgets.
+    GROUP_TASKS = 2000,
 
-## Entries ##
-"""Each task in the dialog/list gets an ID assigned to it like so:
-ID_DYNAMIC_LIST_GROUP + i*ID_OFFSET_TASK + ID_OFFSET_NAME/IS_COMPLETE/????
+    # The following IDs are required for computing the IDs for
+    # each widget that is required to display the task list.
+    # We also want to be compatible in case we need future
+    # changes so we reserve 10 widgets that are being used
+    # for each row why we currently only use two.
+    # The same IDs will be used to persistently store the tasks
+    # in a c4d.BaseContainer.
+    DYNAMIC_TASKS_START = 100000,
+    TASKWIDGET_COUNT = 10,        # Number of widgets per row (incl. buffer)
+    TASKWIDGET_REALCOUNT = 2,     # The real number of widgets
+    TASKWIDGET_OFFSET_STATE = 0,  # Checkbox
+    TASKWIDGET_OFFSET_NAME = 1,   # Text Edit field
 
-So the ids for the 3rd list entry would be
+))
 
-Boolean State: 20000 + 3*10 + 1 = 20031
-String Name: 20000 + 3*10 + 2 = 20032
-"""
+def IsSameNode(node_a, node_b):
+    r""" Returns True if *node_a* and *node_b* are references to the
+    same :class:`c4d.BaseList2D` node, False if not. Note that this
+    method returns always False if any of the nodes is not alive
+    anymore. """
 
-ID_SCROLL_GROUP = 20000
-
-#Starting id for the dynamic list, note that it's a # larger than all others
-ID_DYNAMIC_LIST_GROUP = 30000
-
-#Each entry can store up to 10 pieces of data
-ID_OFFSET_TASK = 10
-ID_OFFSET_IS_COMPLETE = 1
-ID_OFFSET_TASK_NAME = 2
-
-
-## Commands ##
-"""ID's for the various buttons/commands that affect the contents of the dialog. These numbers are
-intentionally lower than those of the dynamic entries to avoid potential ID conflicts/limits."""
-
-ID_COMMAND_GROUP = 2000
-ID_ADD = 2001
-ID_SUBTRACT = 2002
-
+    if not node_a or not node_b:
+        return False
+    if not node_a.IsAlive() or not node_b.IsAlive():
+        return False
+    return node_a == node_b
 
 class TodoListDialog(c4d.gui.GeDialog):
     r""" This class implements creating the layout for the Todo list
@@ -87,135 +89,121 @@ class TodoListDialog(c4d.gui.GeDialog):
 
         # Keep track of the document that we used the last time we
         # updated the layout and values in the dialog.
-        self._last_doc = c4d.documents.GetActiveDocument()
+        self._last_doc = None
 
-        # A list of the task entries. An entry is a dictionary that
-        # has the two keys you can see below.
-        self._todo_list = [{
-            'is_complete': False,
-            'name': self.DEFAULT_TASK_NAME,
-        }]
+        # A list of the task entries. We will load the tasks from
+        # the document when required so we can safely set this
+        # to None (this will also help us to find out when we
+        # forgot to load the tasks).
+        # Each task is a dictionary with two entries:
+        #   - done (bool)
+        #   - name (str)
+        self._task_list = None
 
-    def AddDocumentInfo(self, active_doc=None):
-        r""" Retrieves the name of active_doc and displays it in the dialog."""
+    def ComputeTaskId(self, task_index, offset=0):
+        r""" Returns the ID of a task widget with the specified
+        *task_index*. If *offset* is 0, the base ID (of the
+        first widget) is returned. """
 
-        if active_doc is None:
-            active_doc = c4d.documents.GetActiveDocument()
+        base_id = res.DYNAMIC_TASKS_START + res.TASKWIDGET_COUNT * task_index
+        return base_id + offset
 
-        #Retrieve and display the active document's name
-        active_doc_name = ""
-        if (active_doc is not None) and active_doc.IsAlive():
-            active_doc_name = active_doc.GetDocumentName()
+    def Refresh(self, flush=True, force=False, initial=False, reload_=False):
+        r""" We call this method to create the widgets for each
+        task and set their state. When *flush* is True, the group
+        that contains the tasks will be flushed before the widgets
+        are created (this is default).
 
-        #Empty out the dialog and put in the active document's name.
-        self.LayoutFlushGroup(ID_DOC_INFO_GROUP)
-        self.AddStaticText(ID_DOC_NAME, flags=0, name="To Do in: "+active_doc_name)
-        self.LayoutChanged(ID_DOC_INFO_GROUP)
+        It will also update the widget that displays the name of
+        the current document.
 
-    def CalcCurrentTask(self, i):
-        return ID_DYNAMIC_LIST_GROUP + i*ID_OFFSET_TASK
+        When *force* is True, the layout is garuanteed to be rebuilt.
+        This method will otherwise check if a rebuild is actually
+        necessary.
 
-    def AddListToLayout(self):
-        """Adds an entry to the layout for each element in the classes _todo_list."""
+        When *reload_* is True, the tasks are being reload from the
+        current document. Note that ``reload`` is a built-in name.
 
-        self.LayoutFlushGroup(ID_DYNAMIC_LIST_GROUP)
-        for i, row in enumerate(self._todo_list):
-            current_task = self.CalcCurrentTask(i)
-            self.AddCheckbox(current_task + ID_OFFSET_IS_COMPLETE, 0, initw=0, inith=0, name="")
-            self.SetBool(current_task + ID_OFFSET_IS_COMPLETE, row['is_complete'])
+        *initial* should be set to True when this is the initial
+        call to :meth:`Refresh` from :meth:`CreateLayout`. """
 
-            self.AddEditText(current_task + ID_OFFSET_TASK_NAME, flags=c4d.BFH_SCALEFIT, initw=0, inith=0)
-            self.SetString(current_task + ID_OFFSET_TASK_NAME, row['name'])
-        self.LayoutChanged(ID_DYNAMIC_LIST_GROUP)
+        if initial:
+            flush = True
+            reload_ = True
+            self._last_doc = None
 
-    def Refresh(self):
-        """Recalculates the _todo_list and refreshes the dialog with the new information."""
+        # Obtain the current document and compare it with the
+        # document that we have kept a reference to. If they
+        # match, we don't necessarily need to rebuild the layout.
+        current_doc = c4d.documents.GetActiveDocument()
+        if not IsSameNode(current_doc, self._last_doc):
+            self._last_doc = current_doc
+            force = True
+            reload_ = True
 
-        def RefreshDialog():
-            """Convenience function to reduce duplication of code."""
+        # Update the document name in the title. Although we might
+        # not actually need to rebuild the UI, the name of the
+        # document could've changed.
+        title_text = 'Todo In: %s' % self._last_doc.GetDocumentName()
+        self.SetString(res.TEXT_DOCINFO, title_text)
 
-            self.AddDocumentInfo()
-            self.AddListToLayout()
-
-        #If there isn't a document, wipe the dialog and return
-        active_doc = c4d.documents.GetActiveDocument()
-        if (active_doc is None) or not active_doc.IsAlive():
-            self._last_doc = active_doc
-            self._todo_list = [{
-                'is_complete': False,
-                'name': self.DEFAULT_TASK_NAME
-            }]
-            RefreshDialog()
+        # Stop the method if we don't need to rebuild.
+        if not force:
             return
 
-        #Otherwise, try and build up the dialog from the data in the document.
+        if flush:
+            self.LayoutFlushGroup(res.GROUP_TASKS)
+        if reload_:
+            self.LoadTasks()
 
-        #flush the data
-        self._todo_list = []
+        # Build the widgets for each task.
+        for i, task in enumerate(self._task_list):
+            base_id = self.ComputeTaskId(i)
 
-        doc_bc = active_doc.GetDataInstance()
-        if doc_bc is None:
-            return
+            self.AddCheckbox(base_id + res.TASKWIDGET_OFFSET_STATE, 0, 0, 0, "")
+            self.AddEditText(base_id + res.TASKWIDGET_OFFSET_NAME, c4d.BFH_SCALEFIT)
 
-        #Retrieve this plugin's data stored in the document
-        list_bc = doc_bc.GetContainer(PLUGIN_ID)
-        if list_bc is None:
-            return
+            self.SetBool(base_id + res.TASKWIDGET_OFFSET_STATE, task['done'])
+            self.SetString(base_id + res.TASKWIDGET_OFFSET_NAME, task['name'])
 
-        #Convert the contents of the container into a python list
-        list_length = list_bc.GetInt32(ID_LIST_LENGTH)
+        if flush:
+            self.LayoutChanged(res.GROUP_TASKS)
 
-        #Empty list, fill in with the defaults
-        if list_length == 0:
-            self._todo_list = [{
-                'is_complete': False,
-                'name': self.DEFAULT_TASK_NAME
-            }]
+    def SaveTasks(self):
+        r""" Saves the tasks in the :attr:`_task_list` to the last
+        document that we had hold of. They will be stored in a sub
+        container of the document associated with this Plugin's ID. """
 
-        #Pull the data from the container
-        for i in range(list_length):
-            current_task = self.CalcCurrentTask(i)
-            is_complete = list_bc.GetBool(current_task + ID_OFFSET_IS_COMPLETE)
-            name = list_bc.GetString(current_task + ID_OFFSET_TASK_NAME)
-            self._todo_list.append({'is_complete': is_complete,
-                                'name': name}
-            )
+        # Create the container and will it with the tasks.
+        bc = c4d.BaseContainer()
+        bc.SetLong(0, len(self._task_list))
+        for i, task in enumerate(self._task_list):
+            base_id = self.ComputeTaskId(i)
+            bc.SetBool(base_id + res.TASKWIDGET_OFFSET_STATE, task['done'])
+            bc.SetString(base_id + res.TASKWIDGET_OFFSET_NAME, task['name'])
 
-        #We have the data we need, so refresh the dialog
-        RefreshDialog()
+        # Set the container to the document.
+        self._last_doc.GetDataInstance().SetContainer(PLUGIN_ID, bc)
 
-    def ListToContainer(self):
-        r""" Takes the _todo_list member variable and converts it into
-        a container which is then stuffed into the active document's
-        container. """
+    def LoadTasks(self):
+        r""" Loads tasks from the current document and puts them
+        into the :attr:`_task_list` list. """
 
-        #Get the current document's container
-        active_doc = c4d.documents.GetActiveDocument()
-        if (active_doc is None) or not active_doc.IsAlive():
-            return
+        # Get the sub container and the number of tasks that
+        # have been stored in it.
+        bc = self._last_doc.GetDataInstance().GetContainer(PLUGIN_ID)
+        task_count = max([bc.GetLong(0), 0])
 
-        doc_bc = active_doc.GetDataInstance()
-        if doc_bc is None:
-            return
+        tasks = []
+        for i in xrange(task_count):
+            base_id = self.ComputeTaskId(i)
+            task = {
+                    'done': bc.GetBool(base_id + res.TASKWIDGET_OFFSET_STATE),
+                    'name': bc.GetString(base_id + res.TASKWIDGET_OFFSET_NAME),
+            }
+            tasks.append(task)
 
-        #Get this plugin's sub-container
-        list_bc = doc_bc.GetContainer(PLUGIN_ID)
-
-        if list_bc is None:
-            list_bc = c4d.BaseContainer()
-
-        #Store the length of the list
-        list_length = len(self._todo_list)
-        list_bc.SetInt32(ID_LIST_LENGTH, list_length)
-
-        #Update each of the list items
-        for i, task in enumerate(self._todo_list):
-            current_task = self.CalcCurrentTask(i)
-            list_bc.SetBool(current_task + ID_OFFSET_IS_COMPLETE, task['is_complete'])
-            list_bc.SetString(current_task + ID_OFFSET_TASK_NAME, task['name'])
-
-        #Save the container to the document
-        doc_bc.SetContainer(PLUGIN_ID, list_bc)
+        self._task_list = tasks
 
     # c4d.gui.GeDialog
 
@@ -224,28 +212,49 @@ class TodoListDialog(c4d.gui.GeDialog):
         interface. We create the basic layout and load the tasks that
         have been stored in the active document. """
 
+        self._last_doc = None
         self.SetTitle('Todo List')
 
-        self.GroupBegin(ID_DOC_INFO_GROUP, flags=c4d.BFH_CENTER)
-        self.AddDocumentInfo()
-        self.GroupEnd()
+        # Layout flag that will cause the widget to be scaled as much
+        # possible in horizontal and vertical direction.
+        BF_FULLFIT = c4d.BFH_SCALEFIT | c4d.BFV_SCALEFIT
 
-        # Dynanmic List of Elements Group
-        self.ScrollGroupBegin(ID_SCROLL_GROUP, flags=c4d.BFH_LEFT|c4d.BFV_TOP|c4d.BFH_SCALEFIT|c4d.BFV_SCALEFIT,
-                              scrollflags=c4d.SCROLLGROUP_VERT|c4d.SCROLLGROUP_AUTOVERT)
-        self.GroupBegin(ID_DYNAMIC_LIST_GROUP, flags=c4d.BFH_LEFT|c4d.BFV_TOP|c4d.BFH_SCALEFIT, cols=2, rows=0)
+        # Create the main group that will encapsulate all of the
+        # dialogs widgets. We can pass 0 if we don't want to supply
+        # a specific ID.
+        self.GroupBegin(0, BF_FULLFIT, cols=1, rows=0)
+        self.GroupBorderSpace(4, 4, 4, 4)
 
-        # Call automation function to add menu entries for each task
-        self.AddListToLayout()
+        # This widget displays the active document's title.
+        self.AddStaticText(res.TEXT_DOCINFO, c4d.BFH_CENTER)
 
-        self.GroupEnd()
-        self.GroupEnd()
+        # Create a new Scroll Group that will contain the widgets
+        # for each task. Since a Scroll Group can't have specific
+        # number of columns and rows, we'll have to place an inner
+        # group.
+        # We will also give the Scroll Group a status bar where we
+        # place the "+" button in and give it some border and spacing.
+        scrollflags = c4d.SCROLLGROUP_VERT | c4d.SCROLLGROUP_AUTOVERT | \
+                      c4d.SCROLLGROUP_STATUSBAR_EXT_GROUP | c4d.SCROLLGROUP_STATUSBAR
+        self.ScrollGroupBegin(0, BF_FULLFIT, scrollflags=scrollflags)
+        self.GroupBorderNoTitle(c4d.BORDER_ROUND)
+        self.GroupBorderSpace(4, 4, 4, 2)
+        self.GroupBegin(res.GROUP_TASKS, c4d.BFH_SCALEFIT | c4d.BFV_TOP,
+                cols=res.TASKWIDGET_REALCOUNT, rows=0)
 
-        # Modify List Buttons
-        self.GroupBegin(ID_COMMAND_GROUP, c4d.BFH_CENTER|c4d.BFV_BOTTOM, cols=0, rows=1)
-        self.AddButton(ID_ADD, 0, name="+")
-        self.AddButton(ID_SUBTRACT, 0, name="-")
-        self.GroupEnd()
+        # Call the procedure that will insert the widgets for each
+        # task into the dialog. We don't need it to flush the group
+        # though because it does not contain any items yet.
+        self.Refresh(initial=True)
+
+        self.GroupEnd() # GROUP_TASKS
+        self.GroupEnd() # Wrapper Scroll Group
+
+        # Create the Button to add new Tasks in the status
+        # bar group of the Scroll Group.
+        self.LayoutFlushGroup(c4d.ID_SCROLLGROUP_STATUSBAR_EXTLEFT_GROUP)
+        self.AddButton(res.BUTTON_NEWTASK, c4d.BFH_RIGHT, name="+")
+        self.LayoutChanged(c4d.ID_SCROLLGROUP_STATUSBAR_EXTLEFT_GROUP)
         return True
 
     def CoreMessage(self, kind, msg):
@@ -255,13 +264,7 @@ class TodoListDialog(c4d.gui.GeDialog):
         # One case this message is being sent is when the active
         # document has changed.
         if kind == c4d.EVMSG_DOCUMENTRECALCULATED:
-            # Get the active document and compare it with the
-            # document we have stored. If they differ, the document
-            # has changed and we need to update our interface.
-            doc = c4d.documents.GetActiveDocument()
-            if self._last_doc != doc:
-                self._last_doc = doc
-                self.Refresh()
+            self.Refresh()
 
         return True
 
@@ -270,45 +273,35 @@ class TodoListDialog(c4d.gui.GeDialog):
         a text field. We use this to update the task list and save the
         changed data into the document. """
 
-        #User is adding a row
-        if param == ID_ADD:
-            self._todo_list.append(
-                {
-                    'is_complete': False,
-                    'name': self.DEFAULT_TASK_NAME
-                }
+        # Add a new task if the user pressed the button for it.
+        if param == res.BUTTON_NEWTASK:
+            self._task_list.append(
+                    {'done': False, 'name': self.DEFAULT_TASK_NAME}
             )
-            self.ListToContainer()
-            self.AddListToLayout()
+            self.SaveTasks()
+            self.Refresh(force=True)
 
-        #User is subtracting a row
-        elif param == ID_SUBTRACT:
-            #Remove the last item from the list
-            if len(self._todo_list) > 1:
-                self._todo_list.pop()
-            #Unless there's only one item, in that case restore the default values.
-            else:
-                self._todo_list = [{
-                    'is_complete': False,
-                    'name': self.DEFAULT_TASK_NAME
-                }]
-            self.ListToContainer()
-            self.AddListToLayout()
+        # Or check if the user triggered one of the dynamic widgets.
+        elif param >= res.DYNAMIC_TASKS_START:
+            # Calculate the index of the task and the offset ID
+            # of the widget that was triggered.
+            delta = res.DYNAMIC_TASKS_START - param
+            (task_index, widget_offset) = divmod(delta, res.TASKWIDGET_COUNT)
 
-        #One of the dynamic list entries is being affected
-        elif param > ID_DYNAMIC_LIST_GROUP:
+            # Update the value of the adressed task depending on
+            # which widget was triggered.
+            changed = False
+            if task_index < len(self._task_list):
+                task = self._task_list[task_index]
+                if widget_offset == res.TASKWIDGET_OFFSET_STATE:
+                    task['done'] = self.GetBool(param)
+                    changed = True
+                elif widget_offset == res.TASKWIDGET_OFFSET_NAME:
+                    task['name'] = self.GetString(param)
+                    changed = True
 
-            #figure out which offset id it is within it's task so we can retrieve the right data type
-            task_number = int((param - ID_DYNAMIC_LIST_GROUP)/ID_OFFSET_TASK)
-            offset_id = param % ID_OFFSET_TASK
-
-            if offset_id == ID_OFFSET_IS_COMPLETE:
-                self._todo_list[task_number]['is_complete'] = self.GetBool(param)
-            elif offset_id == ID_OFFSET_TASK_NAME:
-                self._todo_list[task_number]['name'] = self.GetString(param)
-
-            #Store the update in the document's container
-            self.ListToContainer()
+            if changed:
+                self.SaveTasks()
 
         return True
 
