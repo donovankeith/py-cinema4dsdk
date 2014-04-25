@@ -179,6 +179,7 @@ class TaskListDialog(c4d.gui.GeDialog):
 
             self.SetBool(base_id + res.TASKWIDGET_OFFSET_STATE, task['done'])
             self.SetString(base_id + res.TASKWIDGET_OFFSET_NAME, task['name'])
+            self.Enable(base_id + res.TASKWIDGET_OFFSET_NAME, not task['done'])
 
         if flush:
             self.LayoutChanged(res.GROUP_TASKS)
@@ -316,6 +317,12 @@ class TaskListDialog(c4d.gui.GeDialog):
                 if widget_offset == res.TASKWIDGET_OFFSET_STATE:
                     task['done'] = self.GetBool(param)
                     changed = True
+
+                    # Enable or disable the text widget for
+                    # this entry based on the state.
+                    text_id = self.ComputeTaskId(
+                            task_index, res.TASKWIDGET_OFFSET_NAME)
+                    self.Enable(text_id, not task['done'])
                 elif widget_offset == res.TASKWIDGET_OFFSET_NAME:
                     task['name'] = self.GetString(param)
                     changed = True
@@ -356,3 +363,4 @@ class Command(c4d.plugins.CommandData):
 
 if __name__ == '__main__':
     Command().Register()
+
