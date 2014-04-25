@@ -21,7 +21,7 @@ under the MIT License.
 ## Recommended development tools
 
 For string and description resource identifiers (in `c4d_symbols.h` and
-description resource headerss), we use the [`c4ddev`][c4ddev] toolbelt
+description resource headers), we use the [`c4ddev`][c4ddev] toolbelt
 to extract the symbols and load via JSON in the Python plugin.
 
   [c4ddev]: https://github.com/nr-tools/c4ddev
@@ -29,7 +29,7 @@ to extract the symbols and load via JSON in the Python plugin.
 If you're looking for a good IDE, [PyCharm Community Edition][pycharm] is free and
 provides seamless integration with GitHub.
 
-    [pycharm]: http://www.jetbrains.com/pycharm/download/
+  [pycharm]: http://www.jetbrains.com/pycharm/download/
 
 ## New to the Cinema 4D plugin development?
 
@@ -100,7 +100,7 @@ you to make a request that we will merge your changes into the main repository,
 and so we will do! It would be nice if you'd stick to the File Headers information
 for each file as we plan to do something with this information.
 
-    [fork]: https://help.github.com/articles/fork-a-repo
+  [fork]: https://help.github.com/articles/fork-a-repo
 
 We prefer the MIT license, but if, for any special reasons, you want to put your
 contributed sources under a different license, we are fine with that as long as
