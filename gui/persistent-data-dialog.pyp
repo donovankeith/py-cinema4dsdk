@@ -25,7 +25,7 @@ r"""
         1. Creating and updating a dynamic dialog.
         2. Saving the dialog's data within the active document.
         3. Refreshing the dialog when a new document is opened.
-    tags: command gui
+    tags: command gui persistent-data async-dialog
     level: medium
     links:
         http://www.plugincafe.com/forum/forum_posts.asp?TID=9828

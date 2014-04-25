@@ -57,26 +57,23 @@ contain useful information such as a short description, the experience
 level required to understand the example, tags and names of files that
 should be read and understand before reading that example file.
 
-Take the `src/starters/commands/group-objects.cpp` file for an instance:
+Take the `src/starters/commands/group-objects.pyp` file for an instance:
 
-```cpp
-/**
- * Copyright (c) 2013-2014  Niklas Rosenstein
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * [...]
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- *
- * file: src/starters/commands/group-objects.cpp
- * description:
- *    This plugin command groups all selected objects under a
- *    single Null object.
- * tags: command simple muchdoc group object-creation hierarchy-modifications
- * level: beginner
- * read-before: create-cube.cpp
- */
+```python
+...
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+r"""
+    py-cinema4dsdk/starters/commands/group-objects.pyp
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    description: This plugin command groups all selected objects under a
+            single Null object.
+    tags: command simple muchdoc object-creation hierarchy-modifications undos
+    level: beginner
+    read-before: create-cube.cpp
+"""
 ```
 
 __description__: A short description of the plugin. Some files might have
@@ -85,7 +82,8 @@ more detailed description of the example.
 
 __tags__: A list of the tags that match with the example.
 
-__level__: The level someone requires to understand the example.
+__level__: The level someone requires to understand the example. Possible
+values are `beginner`, `medium`, `advanced` and `expert`.
 
 __read-before__: The name of one or more files that should be read and
 understood before reading the current file.

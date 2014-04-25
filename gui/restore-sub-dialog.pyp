@@ -24,7 +24,7 @@ r"""
     description: This file demonstrates how to manage sub-dialogs
         of main dialog including the restoration of the sub-dialog
         in the layout.
-    tags: command gui sub-dialogs layout-restore
+    tags: command gui async-dialog sub-dialogs layout-restore
     level: medium
     links:
         http://plugincafe.com/forum/forum_posts.asp?TID=10015&PID=38923#38923
