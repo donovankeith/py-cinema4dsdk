@@ -5,6 +5,8 @@ The `task-list.pyp` demonstrates:
 3. How to store data from a dialog within a scene file
 4. How to make a simple list from which you can add/subtract the last entry
 5. How to detect if a new scene is open
+6. How to emulate a keyboard event which is used to select all contents of
+a text field (when a new Task is created)
 
 ## Details
 

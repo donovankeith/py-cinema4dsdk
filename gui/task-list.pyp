@@ -28,7 +28,12 @@ r"""
         1. Creating and updating a dynamic dialog.
         2. Saving the dialog's data within the active document.
         3. Refreshing the dialog when a new document is opened.
-    tags: command gui persistent-data async-dialog bitmap-button
+        4. Emulating a keyboard event, more specifically CTRL+A
+        to select all the contents of a text field when a task is
+        created.
+    tags:
+        command gui persistent-data async-dialog bitmap-button
+        event-emulation
     level: medium
     links:
         http://www.plugincafe.com/forum/forum_posts.asp?TID=9828
@@ -272,7 +277,7 @@ class TaskListDialog(c4d.gui.GeDialog):
         self.LayoutChanged(c4d.ID_SCROLLGROUP_STATUSBAR_EXTLEFT_GROUP)
         return True
 
-    def CoreMessage(self, kind, msg):
+    def CoreMessage(self, kind, bc):
         r""" Responds to what's happening inside of Cinema 4D. In this
         case, we're looking to see if the active document has changed. """
 
@@ -295,6 +300,23 @@ class TaskListDialog(c4d.gui.GeDialog):
             )
             self.SaveTasks()
             self.Refresh(force=True)
+
+            # Compute the ID of the newly created text field of
+            # the task.
+            widget_id = self.ComputeTaskId(
+                    len(self._task_list) - 1, res.TASKWIDGET_OFFSET_NAME)
+
+            # Set the focus to the newly created Task and emulate
+            # a CTRL+A input event so that all the contents in the
+            # edit field are selected.
+            self.Activate(widget_id)
+
+            msg = c4d.BaseContainer(c4d.BFM_INPUT)
+            msg.SetLong(c4d.BFM_INPUT_DEVICE, c4d.BFM_INPUT_KEYBOARD)
+            msg.SetString(c4d.BFM_INPUT_ASC, '')
+            msg.SetLong(c4d.BFM_INPUT_CHANNEL, ord('A'))
+            msg.SetLong(c4d.BFM_INPUT_QUALIFIER, c4d.QCTRL)
+            self.SendMessage(widget_id, msg)
 
         # Or check if the user triggered one of the dynamic widgets.
         elif param >= res.DYNAMIC_TASKS_START:
