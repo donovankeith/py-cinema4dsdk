@@ -39,7 +39,7 @@ class IterHierarchyCommand(c4d.plugins.CommandData):
     def Register(self):
         """Registers the plugin with Cinema 4D. Necessary to create a menu entry."""
 
-        help_string = 'C++ SDK Example Command Plugin: Demonstrates ' \
+        help_string = 'Python Example Command Plugin: Demonstrates ' \
                       'working through the object tree recursively and ' \
                       'printing the hierarchly structure to the console.'
 
